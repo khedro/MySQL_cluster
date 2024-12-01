@@ -1,9 +1,9 @@
 #!/bin/bash
 #run Pipeline::
 #creating virtual environment and installing requirements::
-#python3 -m venv venv
-#source venv/bin/active
-#pip install -r requirements.txt
+python3 -m venv venv
+source venv/bin/active
+pip install -r requirements.txt
 
 #create 2 gatekeeper instances
 python3 gateKeeper.py
