@@ -1,4 +1,4 @@
-To run the full pipeline, simply run: bash runPipeline.sh.
+To run the full pipeline, simply run: bash runPipeline.sh
 
 NOTE:: chatGPT4 was used to help in the creation of these scripts.
 & Past TP submissions were used, and in some cases, copied exactly to help facilitate some aspects.
