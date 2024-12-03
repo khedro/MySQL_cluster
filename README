@@ -1,3 +1,5 @@
+To run the automated pipeline, change the file in ~/.aws/credentials first, then run: bash runPipeline.sh
+The outputs are 3 log files + 3 sql files - one from each worker and one from the manager.
 chatGPT4 was used to help in the creation of these scripts.
 Past TP submissions were used, and in some cases, copied exactly to help facilitate some aspects.
 The following link was used to help set up master-subordinate replication:
