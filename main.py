@@ -41,7 +41,67 @@ def get_security_groupID(ec2_client, group_name):
 
 # get public IP
 your_ip = get_public_ip()
-def create_security_group(ec2_client, name):
+# create security group for the Cluster (Manager + Workers)
+def create_security_group_cluster(ec2_client, name):
+        # Check if the security group already exists
+        response = ec2_client.describe_security_groups(
+            Filters=[{'Name': 'group-name', 'Values': [name]}]
+        )
+        if response['SecurityGroups']:
+            print(f"Security group '{name}' already exists.")
+            return response['SecurityGroups'][0]['GroupId']
+
+        # Proceed to create the security group if it doesn't exist
+        response_vpcs = ec2_client.describe_vpcs()
+        vpc_id = response_vpcs.get('Vpcs', [{}])[0].get('VpcId', '')
+
+        response_security_group = ec2_client.create_security_group(
+            GroupName=name,
+            Description='Security group for our instances',
+            VpcId=vpc_id
+        )
+
+        security_group_id = response_security_group['GroupId']
+
+        #get security group id of trusted host::
+        ec2 = boto3.client('ec2')
+        response = ec2.describe_security_groups(
+            Filters=[{'Name': 'group-name', 'Values': ["sg_Proxy"]}]
+            )
+        Proxy_sg_id = response['SecurityGroups'][0]['GroupId']
+
+        ec2_client.authorize_security_group_ingress(
+            GroupId=security_group_id,
+            IpPermissions=[
+                #allow SSH access from your IP
+                {'IpProtocol': 'tcp',
+                 'FromPort': 22,
+                 'ToPort': 22,
+                 'IpRanges': [{'CidrIp': f'{your_ip}/32'}]},
+                 #allow SSH traffic within the group
+                {'IpProtocol': 'tcp',
+                'FromPort': 22,
+                'ToPort': 22,
+                'UserIdGroupPairs': [{'GroupId': security_group_id}]},
+                 #allow FastAPI communication (port 5000) within group 
+                {'IpProtocol': 'tcp',
+                 'FromPort': 5000,
+                 'ToPort': 5000,
+                 'UserIdGroupPairs': [{'GroupId': security_group_id}]},
+                 #allow MySQL comms on port 3306 between them
+                 {'IpProtocol': 'tcp',
+                 'FromPort': 3306,
+                 'ToPort': 3306,
+                 'UserIdGroupPairs': [{'GroupId': security_group_id}]},
+                 #allow FastAPI traffic from proxy
+                {'IpProtocol': 'tcp',
+                 'FromPort': 5000,
+                 'ToPort': 5000,
+                  'UserIdGroupPairs': [{'GroupId': Proxy_sg_id}]},
+            ])
+
+# create security group for the Proxy
+def create_security_group_proxy(ec2_client, name):
         # Check if the security group already exists
         response = ec2_client.describe_security_groups(
             Filters=[{'Name': 'group-name', 'Values': [name]}]
@@ -77,28 +137,13 @@ def create_security_group(ec2_client, name):
                  'FromPort': 22,
                  'ToPort': 22,
                  'IpRanges': [{'CidrIp': f'{your_ip}/32'}]},
-                 #allow SSH traffic within the group
-                {'IpProtocol': 'tcp',
-                'FromPort': 22,
-                'ToPort': 22,
-                'UserIdGroupPairs': [{'GroupId': security_group_id}]},
-                 #allow FastAPI communication (port 5000) within group 
-                {'IpProtocol': 'tcp',
-                 'FromPort': 5000,
-                 'ToPort': 5000,
-                 'UserIdGroupPairs': [{'GroupId': security_group_id}]},
-                 #allow MySQL comms on port 3306 between them
-                 {'IpProtocol': 'tcp',
-                 'FromPort': 3306,
-                 'ToPort': 3306,
-                 'UserIdGroupPairs': [{'GroupId': security_group_id}]},
                  #allow FastAPI traffic from trusted host
                 {'IpProtocol': 'tcp',
                  'FromPort': 5000,
                  'ToPort': 5000,
                   'UserIdGroupPairs': [{'GroupId': trustedHost_sg_id}]},
             ])
-        
+
 def create_workers(ec2_client,secGroupId):
     try:
         ec2_client.create_instances(ImageId='ami-0e86e20dae9224db8', MaxCount=1, InstanceType = 't2.micro',
@@ -220,14 +265,18 @@ if __name__ == "__main__":
     ec2_client = boto3.resource('ec2')
     ec2 = boto3.client('ec2')
     #verify_valid_credentials()
-    create_security_group(ec2,'LOG8415Secgroup')
+    create_security_group_proxy(ec2, 'sg_Proxy')
+    create_security_group_cluster(ec2,'LOG8415Secgroup')
+
     secGroup_id = get_security_groupID(ec2, 'LOG8415Secgroup')
+    secGroup_id_proxy = get_security_groupID(ec2, 'sg_Proxy')
+
     #create_login_key_pair(ec2_client)
 
     #create the instances here::
-    create_workers(ec2_client,secGroup_id)
-    create_manager(ec2_client,secGroup_id)
-    create_proxy(ec2_client,secGroup_id)
+    create_proxy(ec2_client, secGroup_id_proxy)
+    create_workers(ec2_client, secGroup_id)
+    create_manager(ec2_client, secGroup_id)
 
     #already prepared ssh key in gatekeeper scripts::
     #prepare_ssh_key()
