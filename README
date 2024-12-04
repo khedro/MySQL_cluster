@@ -1,5 +1,6 @@
 To run the automated pipeline, modify the file in ~/.aws/credentials appropriately, then run: bash runPipeline.sh
 The outputs are 3 log files + 3 sql files - one from each worker and one from the manager.
+In addition, there are 4 benchmark_*.log files for benchmarking each proxy pattern
 
 File structure:
 - The setUp*.sh scripts are to be run on their respective instances using paramiko
