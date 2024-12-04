@@ -6,6 +6,9 @@ import requests
 from main import get_public_ip, create_login_key_pair, verify_valid_credentials, prepare_ssh_key
 
 #try this way to create security group for our GateKeeper
+# Fetch public IP
+your_ip = get_public_ip()
+
 def create_security_group(ec2_client, name):
     # Check if the security group already exists
     response = ec2_client.describe_security_groups(
@@ -32,17 +35,14 @@ def create_security_group(ec2_client, name):
         GroupId=security_group_id,
         IpPermissions=[
             {'IpProtocol': 'tcp',
-             'FromPort': 80,
-             'ToPort': 80,
-             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-            {'IpProtocol': '-1',
-             'FromPort': 0,
-             'ToPort': 65535,
+             'FromPort': 5000,
+             'ToPort': 5000,
              'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
             {'IpProtocol': 'tcp',
              'FromPort': 22,
              'ToPort': 22,
-             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+             'IpRanges': [{'CidrIp': f'{your_ip}/32'}]
+             }
         ]
     )
 
@@ -71,9 +71,6 @@ security_group = ec2.create_security_group(
 
 # Authorize inbound traffic from the Gatekeeper's security group to the Trusted Host
 # NEED TO AUTHORIZE SSH FROM LOCAL SO I CAN RUN PARAMIKO !@!@
-# Fetch public IP
-your_ip = get_public_ip()
-
 ec2.authorize_security_group_ingress(
     GroupId=security_group['GroupId'],
     IpPermissions=[

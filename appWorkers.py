@@ -40,7 +40,9 @@ async def read_from_db():
         cursor = conn.cursor(dictionary=True)
 
         # Example: Read all rows from the `actor` table
-        query = "SELECT * FROM actor;"
+        #query = "SELECT * FROM actor;"
+        #CHANGED to select only last actor
+        query = "SELECT * FROM actor ORDER BY actor_id DESC LIMIT 1;" 
         cursor.execute(query)
         rows = cursor.fetchall()
 

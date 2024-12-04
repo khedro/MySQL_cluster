@@ -1,4 +1,16 @@
+To run the automated pipeline, modify the file in ~/.aws/credentials appropriately, then run: bash runPipeline.sh
+The outputs are 3 log files + 3 sql files - one from each worker and one from the manager.
+
+File structure:
+- The setUp*.sh scripts are to be run on their respective instances using paramiko
+- the app*.py scripts are the FastAPI applications to be run on the respective instances
+- getJsono.py is to be used after all instances are generated to retrieve public IPs of said instances by name
+- gateKeeper*.py are the scripts used to create the gateKeeper instances and deploy the apps on them
+- main.py and fullSetUpProxyManagerWorker.py are used to create the Proxy + Manager + Worker(1/2) instances
+and deploy the FastAPI apps on them.
+
 chatGPT4 was used to help in the creation of these scripts.
 Past TP submissions were used, and in some cases, copied exactly to help facilitate some aspects.
 The following link was used to help set up master-subordinate replication:
 https://www.digitalocean.com/community/tutorials/how-to-set-up-replication-in-mysql#step-6-starting-and-testing-replication
+

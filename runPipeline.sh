@@ -26,9 +26,24 @@ python3 fullSetUpProxyManagerWorker.py
 python3 gateKeeperII.py
 
 #benchmark the architecture::
-python3 benchmark.py
+#python3 benchmark.py
 
-#download results::
+#identify IP of GateKeeper and send requests to it in parallel::
+ip_gate=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=GateKeeper" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+
+#send 1000 via direct_write proxy
+{ time seq 1000 | parallel --max-args 0 --jobs 10 "curl -X POST http://${ip_gate}:5000/validate -H \"Content-Type: application/json\" -d '{\"action\": \"write\", \"proxy\": \"direct_write\", \"first_name\": \"Omar\", \"last_name\": \"Khedr\"}'" ;} 2>&1 | tee benchmark_direct_write.log
+
+#send 1000 via direct_read
+{ time seq 1000 | parallel --max-args 0 --jobs 10 "curl -X POST http://${ip_gate}:5000/validate -H \"Content-Type: application/json\" -d '{\"action\": \"read\", \"proxy\": \"direct_read\"}'" ; } 2>&1 | tee benchmark_direct_read.log
+
+#send 1000 via random proxy 
+{ time seq 1000 | parallel --max-args 0 --jobs 10 "curl -X POST http://${ip_gate}:5000/validate -H \"Content-Type: application/json\" -d '{\"action\": \"read\", \"proxy\": \"random\"}'" ; } 2>&1 | tee benchmark_random.log
+
+#send 1000 via customize proxy
+{ time seq 1000 | parallel --max-args 0 --jobs 10 "curl -X POST http://${ip_gate}:5000/validate -H \"Content-Type: application/json\" -d '{\"action\": \"read\", \"proxy\": \"customized\"}'" ; } 2>&1 | tee benchmark_customized.log
+
+#download logs from Manager + Worker1 + Worker2 to show it works::
 ips=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Manager,Worker1,Worker2" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
 
 #save logs + actor table to our local dir::
