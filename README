@@ -5,7 +5,7 @@ In addition, there are 4 benchmark_*.log files for benchmarking each proxy patte
 File structure:
 - The setUp*.sh scripts are to be run on their respective instances using paramiko
 - the app*.py scripts are the FastAPI applications to be run on the respective instances
-- getJsono.py is to be used after all instances are generated to retrieve public IPs of said instances by name
+- getJsono.py is to be used after all instances are generated to retrieve IPs of said instances by name
 - gateKeeper*.py are the scripts used to create the gateKeeper instances and deploy the apps on them
 - main.py and fullSetUpProxyManagerWorker.py are used to create the Proxy + Manager + Worker(1/2) instances
 and deploy the FastAPI apps on them.
